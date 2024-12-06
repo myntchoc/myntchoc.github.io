@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Trigo Function Visualizer</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+
+        #nameCard {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 250px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0, 99, 65, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            color: #00ff9d;
+            z-index: 1000;
+        }
+
+        .team-members-icon {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #004d31, #002419);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1001;
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            box-shadow: 0 0 20px rgba(0, 99, 65, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .team-members-icon:hover {
+            border-radius: 50%;
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        #nameCard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
+        #nameCard:hover {
+            transform: perspective(1000px) rotateX(0deg) rotateY(15deg) scale(1.05);
+        }
+
+        #nameCard:hover::before {
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+        }
+
+        h2 {
+            color: #00ff9d;
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transform: translateZ(20px);
+            text-shadow: 
+                0 0 10px rgba(0, 255, 157, 0.5),
+                2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .names {
+            margin: 8px 0;
+            font-size: 1em;
+            transform: translateZ(15px);
+            transition: all 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .names::before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: #00ff9d;
+            opacity: 0.8;
+        }
+
+        .names:hover {
+            color: #00ff9d;
+            transform: translateZ(25px);
+            text-shadow: 
+                0 0 10px rgba(0, 255, 157, 0.5),
+                2px 2px 4px rgba(0, 0, 0, 0.4);
+            padding-left: 20px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        #nameCard::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+            pointer-events: none;
+        }
+
+        /* Add tooltip styles */
+        .tooltip {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(
+                135deg, 
+                rgba(0, 99, 65, 0.9),
+                rgba(0, 0, 0, 0.8)
+            );
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            transform-style: preserve-3d;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 99, 65, 0.3);
+            z-index: 1000;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .tooltip-item {
+            margin: 8px 0;
+            font-size: 0.9em;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .tooltip-item::before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: #00ff9d;
+            opacity: 0.8;
+        }
+
+        .key {
+            color: #00ff9d;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 157, 0.5);
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(0, 99, 65, 0.9), rgba(0, 0, 0, 0.8));
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 99, 65, 0.3);
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .controls button {
+            background: linear-gradient(135deg, #008556, #004d31);
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls button:hover {
+            background: linear-gradient(135deg, #00a66b, #006241);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 153, 102, 0.3);
+        }
+
+        .controls button.active {
+            background: linear-gradient(135deg, #00cc85, #008556);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #00ff9d;
+        }
+
+        .slider-container input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #004d31, #00cc85);
+            border-radius: 3px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #00ff9d;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        }
+
+        .value-display {
+            display: inline-block;
+            min-width: 40px;
+            text-align: right;
+            margin-left: 10px;
+            color: #00ff9d;
+        }
+
+        .equation-display {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: #00ff9d;
+            font-family: monospace;
+        }
+
+        .input-container {
+            margin: 15px 0;
+        }
+
+        .input-container input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #00ff9d;
+            font-family: monospace;
+        }
+
+        .equation-error {
+            color: #ff4444;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        /* Add these styles */
+        .collapsible {
+            position: relative;
+            padding-right: 30px;
+            cursor: pointer;
+        }
+
+        .collapsible::after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: #00ff9d;
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible.collapsed::after {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+        }
+
+        /* Grid background styles */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(0, 255, 157, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 157, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Add axis lines */
+        .axis {
+            position: fixed;
+            background: rgba(0, 255, 157, 0.3);
+            z-index: -1;
+        }
+
+        .x-axis {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+        }
+
+        .y-axis {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+        }
+
+        .mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .glow-button {
+            background: linear-gradient(135deg, #008556, #004d31);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 99, 65, 0.3);
+        }
+
+        .glow-button:hover {
+            background: linear-gradient(135deg, #00a66b, #006241);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 153, 102, 0.3);
+        }
+
+        .equation-display {
+            font-family: 'Computer Modern', serif;
+            font-size: 1.2em;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin: 15px 0;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .equation-display:hover {
+            transform: translateZ(10px);
+            box-shadow: 0 5px 15px rgba(0, 153, 102, 0.3);
+        }
+
+        /* Add 3D effects to controls and tooltip similar to nameCard */
+        .controls, .tooltip {
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateX(10deg) rotateY(5deg);
+            transition: all 0.5s ease;
+        }
+
+        .controls:hover, .tooltip:hover {
+            transform: perspective(1000px) rotateX(0deg) rotateY(15deg) scale(1.05);
+        }
+
+        /* Add transition for mode switching */
+        .grid-background, .axis {
+            transition: opacity 0.3s ease;
+        }
+
+        /* Prevent context menu on right click */
+        canvas {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .axis-label {
+            color: #00ff9d;
+            font-family: monospace;
+            font-size: 12px;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .origin-label {
+            font-weight: bold;
+            opacity: 0.9;
+        }
+
+        /* Update card styles */
+        .controls, .tooltip, #nameCard {
+            background: rgba(0, 99, 65, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced button styles */
+        .button-group button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #004d31, #002419);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 8px;
+            color: #00ff9d;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .button-group button:hover {
+            background: linear-gradient(135deg, #006341, #003626);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.2);
+        }
+
+        .button-group button.active {
+            background: linear-gradient(135deg, #008556, #004d31);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3),
+                        0 0 15px rgba(0, 255, 157, 0.3);
+        }
+
+        /* Add icons to buttons */
+        .button-group button::before {
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+        }
+
+        #sineBtn::before { content: "⌇"; }
+        #cosineBtn::before { content: "∿"; }
+        #tangentBtn::before { content: "∠"; }
+        #combinedBtn::before { content: "⋈"; }
+        #customBtn::before { content: "✎"; }
+
+        /* Improve slider appearance */
+        .slider-container input[type="range"] {
+            height: 8px;
+            background: linear-gradient(90deg, #004d31, #00cc85);
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ff9d;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        }
+
+        /* Add hover effects to cards */
+        .controls:hover, .tooltip:hover, #nameCard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 157, 0.2);
+        }
+
+        .controls, .grid-background, .axis, .axis-label {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-toggle button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Enhance axis label visibility */
+        .axis-label {
+            color: #00ff9d;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 
+                0 0 5px rgba(0, 255, 157, 0.5),
+                0 0 10px rgba(0, 255, 157, 0.3);
+            opacity: 0.9;
+        }
+
+        .controls, .tooltip {
+            background: rgba(0, 99, 65, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 15px;
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            padding: 20px;
+        }
+
+        .mode-toggle button {
+            background: rgba(0, 99, 65, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: #00ff9d;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-toggle button:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 15px rgba(0, 99, 65, 0.2),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .team-members-icon:hover + #nameCard,
+        #nameCard:hover {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(-50%) translateX(-10px);
+        }
+
+        .title-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            perspective: 1000px;
+            text-align: center;
+        }
+
+        .title-3d {
+            font-family: 'Arial', sans-serif;
+            font-size: 1.2em; /* Reduced from 2em */
+            font-weight: bold;
+            color: #00ff9d;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 157, 0.5),
+                0 0 20px rgba(0, 255, 157, 0.3),
+                -1px -1px 0 #006341,  /* 3D effect layers */
+                -2px -2px 0 #004d31,
+                -3px -3px 0 #003821,
+                -4px -4px 0 #002412;
+            transform-style: preserve-3d;
+            animation: floatTitle 4s ease-in-out infinite;
+            background: linear-gradient(135deg, rgba(0, 99, 65, 0.9), rgba(0, 0, 0, 0.8));
+            padding: 10px 20px; /* Reduced padding */
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 157, 0.2);
+            box-shadow: 
+                0 0 20px rgba(0, 99, 65, 0.3),
+                0 0 40px rgba(0, 255, 157, 0.1);
+            white-space: nowrap; /* Keeps text in one line */
+            letter-spacing: 1px; /* Better letter spacing */
+        }
+
+        @keyframes floatTitle {
+            0%, 100% {
+                transform: translateZ(0) rotateX(10deg) scale(1);
+            }
+            50% {
+                transform: translateZ(30px) rotateX(-10deg) scale(1.05);
+            }
+        }
+
+        .title-3d span {
+            display: inline-block;
+            animation: wavyText 2s ease-in-out infinite;
+            animation-delay: calc(0.05s * var(--i)); /* Reduced delay for smoother wave */
+            transform-style: preserve-3d;
+            text-shadow:
+                0 0 10px rgba(0, 255, 157, 0.5),
+                0 0 20px rgba(0, 255, 157, 0.3),
+                0 1px 0 #006341,
+                0 2px 0 #004d31,
+                0 3px 0 #003821,
+                0 4px 0 #002412,
+                0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes wavyText {
+            0%, 100% {
+                transform: translateY(0) translateZ(0);
+            }
+            50% {
+                transform: translateY(-5px) translateZ(20px); /* Reduced movement */
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ammo.js@0.0.2/ammo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/geometries/TextGeometry.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/shaders/FXAAShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/postprocessing/Pass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+</head>
+<body>
+    <script>
+        class PatternedPentagrammicDipyramid {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.setClearColor(0x000000);
+                document.body.appendChild(this.renderer.domElement);
+
+                this.camera.position.z = 15;
+                this.camera.position.y = 0;
+                this.camera.position.x = 0;
+
+                // Parameters
+                this.outerRadius = 1;
+                this.innerRadius = this.outerRadius * 0.382; // Golden ratio for better proportions
+                this.protrusionHeight = 0.2; // Height of pyramids
+
+                this.rotationSpeed = 0.005;
+                this.dampingFactor = 0.05;
+
+                // Mouse control variables
+                this.mouseDown = false;
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.targetRotationX = 0;
+                this.targetRotationY = 0;
+                this.currentRotationX = 0;
+                this.currentRotationY = 0;
+
+                // Add auto-rotation properties
+                this.autoRotationSpeed = 0;
+                this.isUserInteracting = false;
+                this.autoRotationY = 0;
+                this.autoRotationX = Math.PI / 6; // Slight tilt
+
+                // Add these new properties
+                this.time = 0;
+                this.amplitude = 2;    // Height of the wave
+                this.frequency = 0.5;  // Speed of the wave
+                this.pathType = 'sine'; // Can be 'sine', 'cosine', 'tangent'
+
+                // Add this new property to hold the star group
+                this.starGroup = new THREE.Group();
+                this.scene.add(this.starGroup);
+
+                this.customEquation = null;
+                this.updateEquationDisplay();
+
+                this.pathLine = null;
+                this.gridLines = null;
+
+                this.createDipyramid();
+                this.setupLighting();
+                this.createPathVisualization();
+                this.animate();
+
+                // Event listeners
+                document.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                document.addEventListener('mouseup', () => this.onMouseUp());
+                document.addEventListener('wheel', (e) => this.onMouseWheel(e), { passive: false });
+                window.addEventListener('resize', () => this.onWindowResize());
+
+                const nameCard = document.getElementById('nameCard');
+                
+                // Enhanced mouse move effect for more dramatic 3D transformation
+                nameCard.addEventListener('mousemove', (e) => {
+                    const rect = nameCard.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Calculate rotation angles with increased range
+                    const rotateY = ((x / rect.width) - 0.5) * 30; // Increased from 20 to 30
+                    const rotateX = ((y / rect.height) - 0.5) * -30; // Increased from 20 to 30
+                    
+                    // Calculate distance from center for z-translation
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const distanceX = Math.abs(x - centerX) / centerX;
+                    const distanceY = Math.abs(y - centerY) / centerY;
+                    const zTranslate = 40 * (1 - Math.max(distanceX, distanceY));
+                    
+                    // Apply transformations
+                    nameCard.style.transform = `
+                        perspective(1000px) 
+                        rotateX(${rotateX}deg) 
+                        rotateY(${rotateY}deg)
+                        translateZ(${zTranslate}px)
+                        scale(1.05)
+                    `;
+
+                    // Dynamic shadow based on rotation
+                    nameCard.style.boxShadow = `
+                        ${-rotateY}px ${-rotateX}px 20px rgba(0, 99, 65, 0.3),
+                        inset 0 0 20px rgba(255, 255, 255, 0.1)
+                    `;
+
+                    // Update text elements for parallax effect
+                    const titles = nameCard.querySelectorAll('h2');
+                    const names = nameCard.querySelectorAll('.names');
+                    
+                    titles.forEach(title => {
+                        title.style.transform = `
+                            translateZ(40px) 
+                            translateX(${-rotateY * 0.5}px) 
+                            translateY(${-rotateX * 0.5}px)
+                        `;
+                    });
+
+                    names.forEach((name, index) => {
+                        const depth = 25 + (index * 5);
+                        name.style.transform = `
+                            translateZ(${depth}px) 
+                            translateX(${-rotateY * 0.3}px) 
+                            translateY(${-rotateX * 0.3}px)
+                        `;
+                    });
+                });
+
+                // Enhanced reset animation
+                nameCard.addEventListener('mouseleave', () => {
+                    nameCard.style.transform = 'perspective(1000px) rotateX(10deg) rotateY(5deg) translateZ(0)';
+                    nameCard.style.boxShadow = '0 0 20px rgba(0, 99, 65, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1)';
+                    
+                    // Reset text elements
+                    const titles = nameCard.querySelectorAll('h2');
+                    const names = nameCard.querySelectorAll('.names');
+                    
+                    titles.forEach(title => {
+                        title.style.transform = 'translateZ(20px)';
+                    });
+
+                    names.forEach(name => {
+                        name.style.transform = 'translateZ(15px)';
+                    });
+                });
+
+                // Add zoom limits
+                this.minZoom = 2;
+                this.maxZoom = 50;
+                this.camera.position.z = 15;
+
+                this.createGridLines();
+
+                // Add to constructor
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+                this.isAnimating = true; // Start in path mode
+            }
+
+            createDipyramid() {
+                const points = 5;
+
+                const topPoint = new THREE.Vector3(0, this.protrusionHeight, 0);
+                const bottomPoint = new THREE.Vector3(0, -this.protrusionHeight, 0);
+
+                const outerPoints = [];
+                const innerPoints = [];
+
+                // Calculate vertices for the pentagram
+                for (let i = 0; i < points; i++) {
+                    const angle = (i * 2 * Math.PI / points) - Math.PI / 2;
+                    const valleyAngle = angle + (Math.PI / points);
+
+                    outerPoints.push(new THREE.Vector3(
+                        this.outerRadius * Math.cos(angle),
+                        0,
+                        this.outerRadius * Math.sin(angle)
+                    ));
+                    innerPoints.push(new THREE.Vector3(
+                        this.innerRadius * Math.cos(valleyAngle),
+                        0,
+                        this.innerRadius * Math.sin(valleyAngle)
+                    ));
+                }
+
+                // Enhanced materials with better physically-based properties
+                const whiteMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xFFFFFF,
+                    metalness: 0.7,
+                    roughness: 0.2,
+                    side: THREE.DoubleSide
+                });
+
+                const greenMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x006341,
+                    metalness: 0.7,
+                    roughness: 0.2,
+                    side: THREE.DoubleSide
+                });
+
+                // Helper to create a triangular face
+                const createTriangle = (a, b, c, material) => {
+                    const geometry = new THREE.BufferGeometry();
+                    const vertices = [a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z];
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                    geometry.computeVertexNormals();
+                    return new THREE.Mesh(geometry, material);
+                };
+
+                // Instead of adding meshes directly to scene, add them to starGroup
+                // Replace all instances of this.scene.add with this.starGroup.add for the pyramids
+                for (let i = 0; i < points; i++) {
+                    const next = (i + 1) % points;
+
+                    // Top pyramid
+                    this.starGroup.add(createTriangle(topPoint, outerPoints[i], innerPoints[i], whiteMaterial));
+                    this.starGroup.add(createTriangle(topPoint, innerPoints[i], outerPoints[next], greenMaterial));
+
+                    // Bottom pyramid
+                    this.starGroup.add(createTriangle(bottomPoint, outerPoints[i], innerPoints[i], greenMaterial));
+                    this.starGroup.add(createTriangle(bottomPoint, innerPoints[i], outerPoints[next], whiteMaterial));
+                }
+            }
+
+            setupLighting() {
+                // Improved ambient light with warmer tone
+                const ambientLight = new THREE.AmbientLight(0xfff2e6, 0.4);
+                this.scene.add(ambientLight);
+
+                // Main directional light (sun-like)
+                const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                mainLight.position.set(3, 4, 2);
+                this.scene.add(mainLight);
+
+                // Fill light for better shadows
+                const fillLight = new THREE.DirectionalLight(0x74ccff, 0.3);
+                fillLight.position.set(-2, 3, -4);
+                this.scene.add(fillLight);
+            }
+
+            onMouseDown(event) {
+                if (event.button === 2) { // Only respond to right click
+                    this.mouseDown = true;
+                    this.mouseX = event.clientX;
+                    this.mouseY = event.clientY;
+                    this.isUserInteracting = true;
+                }
+            }
+
+            onMouseMove(event) {
+                if (!this.mouseDown) return;
+
+                const deltaX = event.clientX - this.mouseX;
+                const deltaY = event.clientY - this.mouseY;
+
+                this.targetRotationY += deltaX * this.rotationSpeed;
+                this.targetRotationX += deltaY * this.rotationSpeed;
+
+                // Limit vertical rotation to prevent flipping
+                this.targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.targetRotationX));
+
+                this.mouseX = event.clientX;
+                this.mouseY = event.clientY;
+            }
+
+            onMouseUp() {
+                this.mouseDown = false;
+                this.isUserInteracting = false;
+            }
+
+            onMouseWheel(event) {
+                event.preventDefault();
+
+                const zoomSpeed = 0.8;
+                const delta = -Math.sign(event.deltaY) * zoomSpeed;
+                const factor = Math.pow(0.95, delta);
+                const newZoom = this.camera.position.z * factor;
+
+                if (newZoom >= this.minZoom && newZoom <= this.maxZoom) {
+                    this.camera.position.z = newZoom;
+                }
+            }
+
+            updatePosition() {
+                this.time += 0.01;
+                const width = 20; // Match the path width
+                const t = ((this.time % width) - (width / 2)); // Ensure smooth looping
+                
+                const y = this.calculateY(t);
+                // Clamp y position to match path limits
+                const clampedY = Math.max(-5, Math.min(5, y));
+                
+                this.starGroup.position.set(t, clampedY, 0);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                if (this.isAnimating) {
+                    this.updatePosition();
+                }
+
+                if (this.isUserInteracting) {
+                    this.currentRotationX += (this.targetRotationX - this.currentRotationX) * this.dampingFactor;
+                    this.currentRotationY += (this.targetRotationY - this.currentRotationY) * this.dampingFactor;
+                } else {
+                    this.autoRotationY += this.autoRotationSpeed;
+                    this.currentRotationX += (this.autoRotationX - this.currentRotationX) * this.dampingFactor;
+                    this.currentRotationY = this.autoRotationY;
+                }
+
+                this.scene.rotation.x = this.currentRotationX;
+                this.scene.rotation.y = this.currentRotationY;
+
+                if (this.composer) {
+                    this.composer.render();
+                } else {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.createGridLines(); // Recreate grid on resize
+            }
+
+            // Optional: Add method to change the path type
+            setPathType(type) {
+                if(['sine', 'cosine', 'tangent', 'combined'].includes(type)) {
+                    this.pathType = type;
+                    this.time = 0; // Reset time to start from beginning
+                }
+            }
+
+            // Optional: Add methods to adjust parameters
+            setAmplitude(value) {
+                this.amplitude = value;
+            }
+
+            setFrequency(value) {
+                this.frequency = value;
+            }
+
+            createPathVisualization() {
+                if (this.pathLine) {
+                    this.scene.remove(this.pathLine);
+                }
+
+                const points = [];
+                const segments = 2000; // High resolution for smooth curves
+                const width = 20;
+                const yLimit = 5; // Visible bounds limit
+
+                let currentSegment = [];
+                
+                for (let i = 0; i <= segments; i++) {
+                    const t = ((i / segments) * width) - (width / 2);
+                    let y = this.calculateY(t);
+
+                    // Start new segment if:
+                    // 1. Current y is beyond limits
+                    // 2. Previous y was beyond limits in opposite direction
+                    // 3. Near tangent asymptote
+                    if (currentSegment.length > 0) {
+                        const prevY = currentSegment[currentSegment.length - 1].y;
+                        
+                        if (y === null || 
+                            Math.abs(y) > yLimit || 
+                            Math.abs(prevY) > yLimit ||
+                            Math.abs(y - prevY) > 2) { // Detect sudden jumps
+                            
+                            if (currentSegment.length > 1) {
+                                points.push([...currentSegment]);
+                            }
+                            currentSegment = [];
+                            continue;
+                        }
+                    }
+
+                    // Only add points within visible bounds
+                    if (y !== null && Math.abs(y) <= yLimit) {
+                        currentSegment.push(new THREE.Vector3(t, y, 0));
+                    }
+                }
+
+                // Add final segment if it exists
+                if (currentSegment.length > 1) {
+                    points.push(currentSegment);
+                }
+
+                // Create path group
+                const pathGroup = new THREE.Group();
+
+                // Create separate line segments for each continuous part
+                points.forEach(segment => {
+                    if (segment.length > 1) {
+                        const geometry = new THREE.BufferGeometry().setFromPoints(segment);
+                        
+                        // Core line (white)
+                        const coreMaterial = new THREE.LineBasicMaterial({
+                            color: 0xffffff,
+                            opacity: 1,
+                            transparent: true,
+                            linewidth: 2
+                        });
+                        const coreLine = new THREE.Line(geometry, coreMaterial);
+                        pathGroup.add(coreLine);
+
+                        // Glow layers
+                        const glowColors = [
+                            { color: 0x00ff9d, opacity: 0.9, width: 4 },
+                            { color: 0x00ff9d, opacity: 0.7, width: 6 },
+                            { color: 0x00ff9d, opacity: 0.5, width: 8 },
+                            { color: 0x00ff9d, opacity: 0.3, width: 10 }
+                        ];
+
+                        glowColors.forEach(({ color, opacity, width }) => {
+                            const glowMaterial = new THREE.LineBasicMaterial({
+                                color: color,
+                                opacity: opacity,
+                                transparent: true,
+                                linewidth: width
+                            });
+                            const glowLine = new THREE.Line(geometry, glowMaterial);
+                            pathGroup.add(glowLine);
+                        });
+                    }
+                });
+
+                this.pathLine = pathGroup;
+                this.scene.add(this.pathLine);
+            }
+
+            calculateY(t) {
+                try {
+                    if (this.pathType === 'custom' && this.customEquation) {
+                        return this.evaluateEquation(this.customEquation, t);
+                    }
+
+                    switch(this.pathType) {
+                        case 'sine':
+                            return this.amplitude * Math.sin(this.frequency * t);
+                        case 'cosine':
+                            return this.amplitude * Math.cos(this.frequency * t);
+                        case 'tangent':
+                            const tanValue = Math.tan(this.frequency * t);
+                            // Return null near asymptotes
+                            if (Math.abs(tanValue) > 10) {
+                                return null;
+                            }
+                            return this.amplitude * tanValue;
+                        default:
+                            return 0;
+                    }
+                } catch (error) {
+                    console.error('Error calculating Y:', error);
+                    return null;
+                }
+            }
+
+            evaluateEquation(equation, t) {
+                // Create a comprehensive math context
+                const mathContext = {
+                    t: t,
+                        sin: Math.sin,
+                        cos: Math.cos,
+                        tan: Math.tan,
+                        sqrt: Math.sqrt,
+                        pow: Math.pow,
+                        abs: Math.abs,
+                    log: Math.log,
+                    exp: Math.exp,
+                    PI: Math.PI,
+                    E: Math.E,
+                    asin: Math.asin,
+                    acos: Math.acos,
+                    atan: Math.atan,
+                    sinh: Math.sinh,
+                    cosh: Math.cosh,
+                    tanh: Math.tanh,
+                    ceil: Math.ceil,
+                    floor: Math.floor,
+                    round: Math.round,
+                    sign: Math.sign
+                };
+
+                try {
+                    // Replace common mathematical notations
+                    let processedEquation = equation
+                        .replace(/\^/g, '**')                    // Replace ^ with **
+                        .replace(/(?<!Math\.)sin/g, 'Math.sin')  // Add Math. prefix to trig functions
+                        .replace(/(?<!Math\.)cos/g, 'Math.cos')
+                        .replace(/(?<!Math\.)tan/g, 'Math.tan')
+                        .replace(/(?<!Math\.)sqrt/g, 'Math.sqrt')
+                        .replace(/(?<!Math\.)log/g, 'Math.log')
+                        .replace(/(?<!Math\.)exp/g, 'Math.exp')
+                        .replace(/pi/gi, 'Math.PI')              // Replace pi with Math.PI
+                        .replace(/e(?![a-zA-Z])/g, 'Math.E');    // Replace e with Math.E
+
+                    // Create and test the function
+                    const func = new Function('t', 'Math', `
+                        try {
+                            return ${processedEquation};
+                        } catch (e) {
+                            return null;
+                        }
+                    `);
+
+                    const result = func(t, Math);
+                    
+                    // Check if result is valid
+                    if (result === null || isNaN(result) || !isFinite(result)) {
+                        return null;
+                    }
+                    
+                    return this.amplitude * result;
+                } catch (error) {
+                    console.error('Equation evaluation error:', error);
+                    return null;
+                }
+            }
+
+            setCustomEquation(equation) {
+                try {
+                    // Test the equation
+                    this.evaluateEquation(equation, 0);
+                    this.customEquation = equation;
+                    this.pathType = 'custom';
+                    this.updateEquationDisplay();
+                    this.createPathVisualization();
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            updateEquationDisplay() {
+                const display = document.getElementById('equationDisplay');
+                if (!display) return;
+
+                let equation = '';
+                switch(this.pathType) {
+                    case 'sine':
+                        equation = `y = ${this.amplitude} sin(${this.frequency}t)`;
+                        break;
+                    case 'cosine':
+                        equation = `y = ${this.amplitude} cos(${this.frequency}t)`;
+                        break;
+                    case 'tangent':
+                        equation = `y = ${this.amplitude} tan(${this.frequency}t)`;
+                        break;
+                    case 'custom':
+                        equation = `y = ${this.amplitude}(${this.customEquation})`;
+                        break;
+                }
+                display.innerHTML = equation.replace(/\*/g, '·').replace(/\//g, '÷');
+            }
+
+            createGridLines() {
+                if (this.gridLines) {
+                    this.scene.remove(this.gridLines);
+                }
+
+                const gridGroup = new THREE.Group();
+                
+                // Create grid material
+                const gridMaterial = new THREE.LineBasicMaterial({
+                    color: 0x00ff9d,
+                    opacity: 0.15,
+                    transparent: true
+                });
+
+                // Create vertical lines
+                for (let x = -10; x <= 10; x++) {
+                    const geometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(x, -5, 0),
+                        new THREE.Vector3(x, 5, 0)
+                    ]);
+                    const line = new THREE.Line(geometry, gridMaterial);
+                    gridGroup.add(line);
+                }
+
+                // Create horizontal lines
+                for (let y = -5; y <= 5; y++) {
+                    const geometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(-10, y, 0),
+                        new THREE.Vector3(10, y, 0)
+                    ]);
+                    const line = new THREE.Line(geometry, gridMaterial);
+                    gridGroup.add(line);
+                }
+
+                // Create text labels using canvas textures
+                const createTextSprite = (text, color = '#00ff9d') => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.font = 'bold 32px monospace';
+                    ctx.fillStyle = color;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(text, 32, 32);
+
+                    const texture = new THREE.CanvasTexture(canvas);
+                    const material = new THREE.SpriteMaterial({ 
+                        map: texture,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    
+                    const sprite = new THREE.Sprite(material);
+                    sprite.scale.set(0.5, 0.5, 1);
+                    return sprite;
+                };
+
+                // Add x-axis labels
+                for (let x = -10; x <= 10; x++) {
+                    if (x !== 0) {
+                        const label = createTextSprite(x.toString());
+                        label.position.set(x, -0.5, 0);
+                        gridGroup.add(label);
+                    }
+                }
+
+                // Add y-axis labels
+                for (let y = -5; y <= 5; y++) {
+                    if (y !== 0) {
+                        const label = createTextSprite(y.toString());
+                        label.position.set(-0.5, y, 0);
+                        gridGroup.add(label);
+                    }
+                }
+
+                // Add origin label with larger size and brighter color
+                const origin = createTextSprite('0', '#00ffa0');
+                origin.scale.set(0.6, 0.6, 1);
+                origin.position.set(-0.3, -0.3, 0);
+                gridGroup.add(origin);
+
+                // Create axes with different color and increased opacity
+                const axesMaterial = new THREE.LineBasicMaterial({
+                    color: 0x00ff9d,
+                    opacity: 0.5,
+                    transparent: true,
+                    linewidth: 2
+                });
+
+                // X-axis
+                const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-10, 0, 0),
+                    new THREE.Vector3(10, 0, 0)
+                ]);
+                const xAxis = new THREE.Line(xAxisGeometry, axesMaterial);
+                gridGroup.add(xAxis);
+
+                // Y-axis
+                const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, -5, 0),
+                    new THREE.Vector3(0, 5, 0)
+                ]);
+                const yAxis = new THREE.Line(yAxisGeometry, axesMaterial);
+                gridGroup.add(yAxis);
+
+                this.gridLines = gridGroup;
+                this.scene.add(this.gridLines);
+            }
+        }
+
+        let star; // Declare star globally
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            star = new PatternedPentagrammicDipyramid();
+            setupCollapsibles();
+        });
+
+        function setActiveWave(type) {
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(type + 'Btn').classList.add('active');
+            
+            if (type === 'custom') {
+                document.getElementById('customEquationContainer').style.display = 'block';
+            } else {
+                document.getElementById('customEquationContainer').style.display = 'none';
+                star.pathType = type;
+                star.createPathVisualization();
+                star.updateEquationDisplay();
+            }
+        }
+
+        function updateAmplitude(value) {
+            document.getElementById('amplitudeValue').textContent = parseFloat(value).toFixed(1);
+            star.setAmplitude(parseFloat(value));
+            star.createPathVisualization(); // Recreate path when changing amplitude
+        }
+
+        function updateFrequency(value) {
+            document.getElementById('frequencyValue').textContent = parseFloat(value).toFixed(1);
+            star.setFrequency(parseFloat(value));
+            star.createPathVisualization(); // Recreate path when changing frequency
+        }
+
+        function applyCustomEquation() {
+            const input = document.getElementById('customEquation');
+            const errorDisplay = document.getElementById('equationError');
+            const equation = input.value.trim();
+            
+            if (!equation) {
+                errorDisplay.textContent = 'Please enter an equation';
+                return;
+            }
+
+            try {
+                // Test the equation at a few points
+                const testPoints = [-1, 0, 1];
+                const results = testPoints.map(t => star.evaluateEquation(equation, t));
+                
+                if (results.every(r => r === null)) {
+                    errorDisplay.textContent = 'Invalid equation: Please check your syntax';
+                    return;
+                }
+
+                star.customEquation = equation;
+                star.pathType = 'custom';
+                star.createPathVisualization();
+                star.updateEquationDisplay();
+                errorDisplay.textContent = '';
+                
+                document.querySelectorAll('.controls button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('customBtn').classList.add('active');
+            } catch (error) {
+                errorDisplay.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Add this after your existing script
+        function setupCollapsibles() {
+            document.querySelectorAll('.collapsible').forEach(header => {
+                header.addEventListener('click', () => {
+                    header.classList.toggle('collapsed');
+                    const content = header.nextElementSibling;
+                    if (content && content.classList.contains('collapsible-content')) {
+                        content.classList.toggle('collapsed');
+                    }
+                });
+            });
+        }
+
+        function toggleMode() {
+            if (!star) return;
+
+            const controls = document.querySelector('.controls');
+            const gridBackground = document.querySelector('.grid-background');
+            const axes = document.querySelectorAll('.axis');
+            const modeToggle = document.getElementById('modeToggle');
+            
+            // Toggle based on pathLine visibility
+            if (star.pathLine && star.pathLine.visible) {
+                // Switch to free mode
+                controls.style.display = 'none';
+                gridBackground.style.opacity = '0';
+                axes.forEach(axis => axis.style.opacity = '0');
+                modeToggle.textContent = 'Switch to Path Mode';
+                star.pathLine.visible = false;
+                star.gridLines.visible = false;
+                star.starGroup.position.set(0, 0, 0);
+                star.isAnimating = false;
+            } else {
+                // Switch to path mode
+                controls.style.display = 'block';
+                gridBackground.style.opacity = '1';
+                axes.forEach(axis => axis.style.opacity = '1');
+                modeToggle.textContent = 'Switch to Free Mode';
+                if (star.pathLine) star.pathLine.visible = true;
+                if (star.gridLines) star.gridLines.visible = true;
+                star.isAnimating = true;
+            }
+        }
+    </script>
+    <div class="grid-background"></div>
+    <div class="axis x-axis"></div>
+    <div class="axis y-axis"></div>
+
+    <div class="team-members-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+    </div>
+
+    <div id="nameCard">
+        <h2>Team Members</h2>
+        <div class="names">Belen, Yuan</div>
+        <div class="names">Eroyla, Andrew</div>
+        <div class="names">Ramos, Daniel</div>
+    </div>
+
+    <div class="tooltip collapsible-content">
+        <h3 class="collapsible">Controls</h3>
+        <div class="collapsible-content">
+            <div class="tooltip-item"><span class="key">Right Click + Drag</span> to rotate the star</div>
+            <div class="tooltip-item"><span class="key">Mouse Wheel</span> to zoom in/out</div>
+        </div>
+    </div>
+
+    <div class="controls collapsible-content">
+        <h3 class="collapsible">Wave Controls</h3>
+        <div class="collapsible-content">
+            <div class="button-group">
+                <button onclick="setActiveWave('sine')" class="active" id="sineBtn" title="Sine Wave (SOH)">
+                    Sine Wave
+                </button>
+                <button onclick="setActiveWave('cosine')" id="cosineBtn" title="Cosine Wave (CAH)">
+                    Cosine Wave
+                </button>
+                <button onclick="setActiveWave('tangent')" id="tangentBtn" title="Tangent Wave (TOA)">
+                    Tangent Wave
+                </button>
+                <button onclick="setActiveWave('custom')" id="customBtn">Custom</button>
+            </div>
+
+            <div class="equation-display">
+                Current Equation: <span id="equationDisplay"></span>
+            </div>
+
+            <div id="customEquationContainer" style="display: none;">
+                <div class="input-container">
+                    <label>Custom Equation (use 't' as variable):</label>
+                    <input type="text" 
+                           id="customEquation" 
+                           placeholder="Examples: sin(t), t^2, sqrt(abs(t))" 
+                           title="Available functions: sin, cos, tan, sqrt, abs, log, exp, pow
+                                  Constants: PI, E
+                                  Operators: +, -, *, /, ^
+                                  Variable: t"
+                    />
+                    <button onclick="applyCustomEquation()">Apply</button>
+                </div>
+                <div class="equation-help">
+                    Try: sin(t)*cos(t), t^2, sqrt(abs(t)), log(abs(t)+1)
+                </div>
+                <div class="equation-error" id="equationError"></div>
+            </div>
+            
+            <div class="slider-container">
+                <label>Amplitude: <span id="amplitudeValue">2.0</span></label>
+                <input type="range" min="0.5" max="5" step="0.5" value="2" 
+                       oninput="updateAmplitude(this.value)">
+            </div>
+            
+            <div class="slider-container">
+                <label>Frequency: <span id="frequencyValue">0.5</span></label>
+                <input type="range" min="0.1" max="2" step="0.1" value="0.5" 
+                       oninput="updateFrequency(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <div class="mode-toggle">
+        <button onclick="toggleMode()" id="modeToggle" class="glow-button">
+            Switch to Free Mode
+        </button>
+    </div>
+
+    <div class="title-container">
+        <h1 class="title-3d">
+            <span style="--i:1">3</span>
+            <span style="--i:2">D</span>
+            <span style="--i:3">&nbsp;</span>
+            <span style="--i:4">T</span>
+            <span style="--i:5">r</span>
+            <span style="--i:6">i</span>
+            <span style="--i:7">g</span>
+            <span style="--i:8">o</span>
+            <span style="--i:9">&nbsp;</span>
+            <span style="--i:10">F</span>
+            <span style="--i:11">u</span>
+            <span style="--i:12">n</span>
+            <span style="--i:13">c</span>
+            <span style="--i:14">t</span>
+            <span style="--i:15">i</span>
+            <span style="--i:16">o</span>
+            <span style="--i:17">n</span>
+            <span style="--i:18">&nbsp;</span>
+            <span style="--i:19">V</span>
+            <span style="--i:20">i</span>
+            <span style="--i:21">s</span>
+            <span style="--i:22">u</span>
+            <span style="--i:23">a</span>
+            <span style="--i:24">l</span>
+            <span style="--i:25">i</span>
+            <span style="--i:26">z</span>
+            <span style="--i:27">e</span>
+            <span style="--i:28">r</span>
+        </h1>
+    </div>
+</body>
+</html>
